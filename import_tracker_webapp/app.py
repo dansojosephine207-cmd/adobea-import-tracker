@@ -93,6 +93,4 @@ def export_csv():
 
 if __name__ == "__main__":
     print("\n✅ Import Tracker is running!")
-    print("👉 Open this link on your laptop: http://localhost:5000")
-    print("👉 To open on your PHONE: use your laptop's IP address instead of localhost\n")
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
