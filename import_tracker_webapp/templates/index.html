@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📦 Adobea Import Tracker</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#6c63ff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Adobea Import Tracker">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --card: #22263a;
+    --border: #2e3250;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --danger: #ff4d6d;
+    --text: #e8eaf6;
+    --sub: #8b90b4;
+    --profit-color: #00d4aa;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #6c63ff 0%, #3a36c4 100%);
+    padding: 20px 24px 18px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(108,99,255,0.4);
+  }
+  header h1 { font-size: clamp(18px, 4vw, 26px); font-weight: 700; letter-spacing: -0.3px; }
+  header p  { font-size: 13px; opacity: 0.8; margin-top: 3px; }
+
+  /* ── TOTALS BAR ── */
+  #totals-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-box {
+    flex: 1;
+    min-width: 140px;
+    background: var(--card);
+    border-radius: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+  }
+  .stat-box .label { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-box .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+  .stat-box.profit .value { color: var(--profit-color); }
+  .stat-box.accent .value { color: var(--accent); }
+
+  /* ── FORM ── */
+  #form-section {
+    padding: 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--sub);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+  }
+  .field input {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--sub); }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-danger  { background: var(--danger); color: white; }
+  .btn-export  { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn:hover   { opacity: 0.88; }
+
+  /* ── SEARCH ── */
+  #search-section {
+    padding: 12px 16px;
+    background: var(--bg);
+  }
+  #search {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+  #search:focus { border-color: var(--accent); }
+
+  /* ── TABLE (desktop) ── */
+  #table-section { padding: 0 16px 16px; }
+
+  .desktop-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .desktop-table th {
+    background: var(--card);
+    color: var(--sub);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 90px;
+  }
+  .desktop-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .desktop-table tr:last-child td { border-bottom: none; }
+  .desktop-table tr:hover td { background: var(--card); }
+
+  .tracking-cell {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #a5b4fc;
+    word-break: break-all;
+  }
+  .profit-cell { color: var(--profit-color); font-weight: 600; }
+  .loss-cell   { color: var(--danger); font-weight: 600; }
+  .date-cell   { color: var(--sub); font-size: 11px; }
+
+  
+  .edit-btn {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .edit-btn:hover { background: var(--accent); color: white; }
+  .del-btn {
+    background: none;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .del-btn:hover { background: var(--danger); color: white; }
+
+  /* ── MOBILE CARDS ── */
+  .mobile-cards { display: none; }
+  .item-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .card-name { font-weight: 600; font-size: 15px; }
+  .card-tracking {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #a5b4fc;
+    margin-top: 3px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .card-stat .clabel { font-size: 10px; color: var(--sub); text-transform: uppercase; }
+  .card-stat .cval  { font-size: 14px; font-weight: 600; margin-top: 2px; }
+  .card-stat.cprofit .cval { color: var(--profit-color); }
+  .card-date { font-size: 10px; color: var(--sub); text-align: right; margin-top: 6px; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--sub);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state h3 { font-size: 18px; margin-bottom: 6px; color: var(--text); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--accent2);
+    color: #0f1117;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: transform 0.3s ease;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .desktop-table { display: none; }
+    .mobile-cards  { display: block; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .stat-box { min-width: 110px; }
+  }
+
+  /* ── EDIT MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal h2 { font-size: 18px; margin-bottom: 18px; color: var(--text); }
+  .modal .field { margin-bottom: 14px; }
+  .modal .field label { display: block; font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .modal .field input { width: 100%; padding: 10px 12px; background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; font-family: inherit; outline: none; }
+  .modal .field input:focus { border-color: var(--accent); }
+  .modal-btns { display: flex; gap: 10px; margin-top: 18px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📦 Adobea Import Tracker</h1>
+  <p>Track your shipments · shipping fees · customer prices · profit</p>
+</header>
+
+<!-- TOTALS -->
+<div id="totals-bar">
+  <div class="stat-box accent">
+    <div class="label">Total Items</div>
+    <div class="value" id="stat-count">0</div>
+  </div>
+  <div class="stat-box">
+    <div class="label">Total Shipping Paid</div>
+    <div class="value" id="stat-shipping">GHS 0.00</div>
+  </div>
+  <div class="stat-box">
+    <div class="label">Total from Customers</div>
+    <div class="value" id="stat-customer">GHS 0.00</div>
+  </div>
+  <div class="stat-box profit">
+    <div class="label">Total Profit</div>
+    <div class="value" id="stat-profit">GHS 0.00</div>
+  </div>
+</div>
+
+<!-- FORM -->
+<div id="form-section">
+  <div class="form-grid">
+    <div class="field">
+      <label>Item Name</label>
+      <input id="f-name" type="text" placeholder="e.g. Washing Machine">
+    </div>
+    <div class="field">
+      <label>Tracking Number</label>
+      <input id="f-tracking" type="text" placeholder="e.g. YT123456789CN">
+    </div>
+    <div class="field">
+      <label>Shipping Fee (GHS)</label>
+      <input id="f-shipping" type="number" step="0.01" placeholder="0.00">
+    </div>
+    <div class="field">
+      <label>Customer Price (GHS)</label>
+      <input id="f-price" type="number" step="0.01" placeholder="0.00">
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="addItem()">➕ Add Item</button>
+    <button class="btn btn-export"  onclick="exportCSV()">📥 Export to Excel</button>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div id="search-section">
+  <input id="search" type="text" placeholder="🔍  Search by item name or tracking number..." oninput="renderTable()">
+</div>
+
+<!-- TABLE -->
+<div id="table-section">
+  <!-- Desktop -->
+  <table class="desktop-table" id="desktop-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Item Name</th>
+        <th>Tracking Number</th>
+        <th>Shipping Fee</th>
+        <th>Customer Price</th>
+        <th>Profit</th>
+        <th>Date Added</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+  <!-- Mobile -->
+  <div class="mobile-cards" id="mobile-cards"></div>
+  <!-- Empty -->
+  <div class="empty-state" id="empty-state" style="display:none">
+    <div class="icon">📦</div>
+    <h3>No items yet</h3>
+    <p>Add your first shipment item above to get started.</p>
+  </div>
+</div>
+
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h2>✏️ Edit Item</h2>
+    <div class="field"><label>Item Name</label><input id="e-name" type="text"></div>
+    <div class="field"><label>Tracking Number</label><input id="e-tracking" type="text"></div>
+    <div class="field"><label>Shipping Fee (GHS)</label><input id="e-shipping" type="number" step="0.01"></div>
+    <div class="field"><label>Customer Price (GHS)</label><input id="e-price" type="number" step="0.01"></div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="saveEdit()">💾 Save Changes</button>
+      <button class="btn btn-export" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+
+let editingId = null;
+
+function openEdit(id) {
+  const item = allItems.find(i => i.id === id);
+  if (!item) return;
+  editingId = id;
+  document.getElementById('e-name').value     = item.item_name;
+  document.getElementById('e-tracking').value = item.tracking_number;
+  document.getElementById('e-shipping').value = item.shipping_fee;
+  document.getElementById('e-price').value    = item.customer_price;
+  document.getElementById('edit-modal').classList.add('open');
+  document.getElementById('e-name').focus();
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editingId = null;
+}
+
+async function saveEdit() {
+  const name     = document.getElementById('e-name').value.trim();
+  const tracking = document.getElementById('e-tracking').value.trim();
+  const shipping = document.getElementById('e-shipping').value.trim();
+  const price    = document.getElementById('e-price').value.trim();
+  if (!name || !tracking || !shipping || !price) { showToast('⚠️ Fill in all fields!'); return; }
+  const res = await fetch('/api/items/' + editingId, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ item_name: name, tracking_number: tracking, shipping_fee: shipping, customer_price: price })
+  });
+  const data = await res.json();
+  if (data.success) {
+    const idx = allItems.findIndex(i => i.id === editingId);
+    allItems[idx] = data.item;
+    renderTable();
+    updateTotals();
+    closeModal();
+    showToast('✅ Item updated!');
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+let allItems = [];
+
+async function loadItems() {
+  const res = await fetch('/api/items');
+  allItems = await res.json();
+  renderTable();
+  updateTotals();
+}
+
+function getFiltered() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  if (!q) return allItems;
+  return allItems.filter(i =>
+    i.item_name.toLowerCase().includes(q) ||
+    i.tracking_number.toLowerCase().includes(q)
+  );
+}
+
+function renderTable() {
+  const items = getFiltered();
+  const tbody = document.getElementById('table-body');
+  const mobileDiv = document.getElementById('mobile-cards');
+  const emptyDiv = document.getElementById('empty-state');
+
+  if (items.length === 0) {
+    tbody.innerHTML = '';
+    mobileDiv.innerHTML = '';
+    emptyDiv.style.display = 'block';
+    return;
+  }
+  emptyDiv.style.display = 'none';
+
+  // Desktop rows
+  tbody.innerHTML = items.map((item, i) => {
+    const profitVal = parseFloat(item.profit);
+    const profitClass = profitVal >= 0 ? 'profit-cell' : 'loss-cell';
+    return `<tr>
+      <td style="color:var(--sub);font-size:12px">${i+1}</td>
+      <td><strong>${esc(item.item_name)}</strong></td>
+      <td class="tracking-cell">${esc(item.tracking_number)}</td>
+      <td>GHS ${parseFloat(item.shipping_fee).toLocaleString('en-GH',{minimumFractionDigits:2})}</td>
+      <td>GHS ${parseFloat(item.customer_price).toLocaleString('en-GH',{minimumFractionDigits:2})}</td>
+      <td class="${profitClass}">GHS ${parseFloat(item.profit).toLocaleString('en-GH',{minimumFractionDigits:2})}</td>
+      <td class="date-cell">${item.date_added}</td>
+     <td style="display:flex;gap:6px">
+  <button class="edit-btn" onclick="openEdit('${item.id}')">✏️ Edit</button>
+  <button class="del-btn" onclick="deleteItem('${item.id}')">🗑</button>
+</td> 
+    </tr>`;
+  }).join('');
+
+  // Mobile cards
+  mobileDiv.innerHTML = items.map(item => {
+    const profitVal = parseFloat(item.profit);
+    const profitClass = profitVal >= 0 ? 'cprofit' : '';
+    const profitColor = profitVal >= 0 ? '' : 'color:var(--danger)';
+    return `<div class="item-card">
+      <div class="card-top">
+        <div>
+          <div class="card-name">${esc(item.item_name)}</div>
+          <div class="card-tracking">📦 ${esc(item.tracking_number)}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="edit-btn" onclick="openEdit('${item.id}')">✏️ Edit</button>
+          <button class="del-btn" onclick="deleteItem('${item.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="card-grid">
+        <div class="card-stat">
+          <div class="clabel">Shipping</div>
+          <div class="cval">GHS ${parseFloat(item.shipping_fee).toLocaleString('en-GH',{minimumFractionDigits:2})}</div>
+        </div>
+        <div class="card-stat">
+          <div class="clabel">Customer</div>
+          <div class="cval">GHS ${parseFloat(item.customer_price).toLocaleString('en-GH',{minimumFractionDigits:2})}</div>
+        </div>
+        <div class="card-stat ${profitClass}">
+          <div class="clabel">Profit</div>
+          <div class="cval" style="${profitColor}">GHS ${parseFloat(item.profit).toLocaleString('en-GH',{minimumFractionDigits:2})}</div>
+        </div>
+      </div>
+      <div class="card-date">${item.date_added}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateTotals() {
+  let ship=0, cust=0, prof=0;
+  allItems.forEach(i => {
+    ship += parseFloat(i.shipping_fee)||0;
+    cust += parseFloat(i.customer_price)||0;
+    prof += parseFloat(i.profit)||0;
+  });
+  const fmt = n => 'GHS ' + n.toLocaleString('en-GH',{minimumFractionDigits:2});
+  document.getElementById('stat-count').textContent    = allItems.length;
+  document.getElementById('stat-shipping').textContent = fmt(ship);
+  document.getElementById('stat-customer').textContent = fmt(cust);
+  document.getElementById('stat-profit').textContent   = fmt(prof);
+  document.getElementById('stat-profit').style.color   = prof >= 0 ? 'var(--profit-color)' : 'var(--danger)';
+}
+
+async function addItem() {
+  const name     = document.getElementById('f-name').value.trim();
+  const tracking = document.getElementById('f-tracking').value.trim();
+  const shipping = document.getElementById('f-shipping').value.trim();
+  const price    = document.getElementById('f-price').value.trim();
+
+  if (!name || !tracking || !shipping || !price) {
+    showToast('⚠️ Please fill in all fields!');
+    return;
+  }
+
+  const res = await fetch('/api/items', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      item_name: name,
+      tracking_number: tracking,
+      shipping_fee: shipping,
+      customer_price: price
+    })
+  });
+  const data = await res.json();
+  if (data.success) {
+    allItems.push(data.item);
+    renderTable();
+    updateTotals();
+    document.getElementById('f-name').value     = '';
+    document.getElementById('f-tracking').value = '';
+    document.getElementById('f-shipping').value = '';
+    document.getElementById('f-price').value    = '';
+    document.getElementById('f-name').focus();
+    showToast('✅ Item added!');
+  }
+}
+
+async function deleteItem(id) {
+  if (!confirm('Delete this item?')) return;
+  await fetch(`/api/items/${id}`, {method:'DELETE'});
+  allItems = allItems.filter(i => i.id !== id);
+  renderTable();
+  updateTotals();
+  showToast('🗑 Item deleted');
+}
+
+function exportCSV() {
+  window.location.href = '/api/export';
+  showToast('📥 Downloading...');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+}
+
+// Enter key to add
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement.closest('#form-section')) addItem();
+});
+
+loadItems();
+
+// Register service worker for PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/sw.js');
+}
+</script>
+</body>
+</html>
