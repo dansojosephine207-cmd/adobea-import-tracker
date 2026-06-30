@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📦 Adobea Import Tracker</title>
+<title>📦 Import Tracker</title>
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#6c63ff">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Adobea Import Tracker">
+<meta name="apple-mobile-web-app-title" content="Import Tracker">
 <link rel="apple-touch-icon" href="/static/icon-192.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -38,6 +38,7 @@
 
   /* ── HEADER ── */
   header {
+    position: relative;
     background: linear-gradient(135deg, #6c63ff 0%, #3a36c4 100%);
     padding: 20px 24px 18px;
     text-align: center;
@@ -302,7 +303,7 @@
 <body>
 
 <header>
-  <h1>📦 Adobea Import Tracker</h1>
+  <h1>📦 Import Tracker</h1>
   <p>Track your shipments · shipping fees · customer prices · profit</p>
 </header>
 
@@ -338,6 +339,10 @@
       <input id="f-tracking" type="text" placeholder="e.g. YT123456789CN">
     </div>
     <div class="field">
+      <label>Customer Name</label>
+      <input id="f-customer" type="text" placeholder="e.g. Kwame Mensah">
+    </div>
+    <div class="field">
       <label>Shipping Fee (GHS)</label>
       <input id="f-shipping" type="number" step="0.01" placeholder="0.00">
     </div>
@@ -366,6 +371,7 @@
         <th>#</th>
         <th>Item Name</th>
         <th>Tracking Number</th>
+        <th>Customer Name</th>
         <th>Shipping Fee</th>
         <th>Customer Price</th>
         <th>Profit</th>
@@ -392,6 +398,7 @@
     <h2>✏️ Edit Item</h2>
     <div class="field"><label>Item Name</label><input id="e-name" type="text"></div>
     <div class="field"><label>Tracking Number</label><input id="e-tracking" type="text"></div>
+    <div class="field"><label>Customer Name</label><input id="e-customer" type="text"></div>
     <div class="field"><label>Shipping Fee (GHS)</label><input id="e-shipping" type="number" step="0.01"></div>
     <div class="field"><label>Customer Price (GHS)</label><input id="e-price" type="number" step="0.01"></div>
     <div class="modal-btns">
@@ -413,6 +420,7 @@ function openEdit(id) {
   editingId = id;
   document.getElementById('e-name').value     = item.item_name;
   document.getElementById('e-tracking').value = item.tracking_number;
+  document.getElementById('e-customer').value = item.customer_name || '';
   document.getElementById('e-shipping').value = item.shipping_fee;
   document.getElementById('e-price').value    = item.customer_price;
   document.getElementById('edit-modal').classList.add('open');
@@ -427,13 +435,14 @@ function closeModal() {
 async function saveEdit() {
   const name     = document.getElementById('e-name').value.trim();
   const tracking = document.getElementById('e-tracking').value.trim();
+  const customer = document.getElementById('e-customer').value.trim();
   const shipping = document.getElementById('e-shipping').value.trim();
   const price    = document.getElementById('e-price').value.trim();
   if (!name || !tracking || !shipping || !price) { showToast('⚠️ Fill in all fields!'); return; }
   const res = await fetch('/api/items/' + editingId, {
     method: 'PUT',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ item_name: name, tracking_number: tracking, shipping_fee: shipping, customer_price: price })
+    body: JSON.stringify({ item_name: name, tracking_number: tracking, customer_name: customer, shipping_fee: shipping, customer_price: price })
   });
   const data = await res.json();
   if (data.success) {
@@ -491,14 +500,15 @@ function renderTable() {
       <td style="color:var(--sub);font-size:12px">${i+1}</td>
       <td><strong>${esc(item.item_name)}</strong></td>
       <td class="tracking-cell">${esc(item.tracking_number)}</td>
+      <td>${esc(item.customer_name || '-')}</td>
       <td>GHS ${parseFloat(item.shipping_fee).toLocaleString('en-GH',{minimumFractionDigits:2})}</td>
       <td>GHS ${parseFloat(item.customer_price).toLocaleString('en-GH',{minimumFractionDigits:2})}</td>
       <td class="${profitClass}">GHS ${parseFloat(item.profit).toLocaleString('en-GH',{minimumFractionDigits:2})}</td>
       <td class="date-cell">${item.date_added}</td>
-     <td style="display:flex;gap:6px">
-  <button class="edit-btn" onclick="openEdit('${item.id}')">✏️ Edit</button>
-  <button class="del-btn" onclick="deleteItem('${item.id}')">🗑</button>
-</td> 
+      <td style="display:flex;gap:6px">
+        <button class="edit-btn" onclick="openEdit('${item.id}')">✏️ Edit</button>
+        <button class="del-btn" onclick="deleteItem('${item.id}')">🗑</button>
+      </td>
     </tr>`;
   }).join('');
 
@@ -512,6 +522,7 @@ function renderTable() {
         <div>
           <div class="card-name">${esc(item.item_name)}</div>
           <div class="card-tracking">📦 ${esc(item.tracking_number)}</div>
+          <div class="card-tracking">👤 ${esc(item.customer_name || 'No customer name')}</div>
         </div>
         <div style="display:flex;gap:6px">
           <button class="edit-btn" onclick="openEdit('${item.id}')">✏️ Edit</button>
@@ -555,6 +566,7 @@ function updateTotals() {
 async function addItem() {
   const name     = document.getElementById('f-name').value.trim();
   const tracking = document.getElementById('f-tracking').value.trim();
+  const customer = document.getElementById('f-customer').value.trim();
   const shipping = document.getElementById('f-shipping').value.trim();
   const price    = document.getElementById('f-price').value.trim();
 
@@ -569,6 +581,7 @@ async function addItem() {
     body: JSON.stringify({
       item_name: name,
       tracking_number: tracking,
+      customer_name: customer,
       shipping_fee: shipping,
       customer_price: price
     })
@@ -580,6 +593,7 @@ async function addItem() {
     updateTotals();
     document.getElementById('f-name').value     = '';
     document.getElementById('f-tracking').value = '';
+    document.getElementById('f-customer').value = '';
     document.getElementById('f-shipping').value = '';
     document.getElementById('f-price').value    = '';
     document.getElementById('f-name').focus();
